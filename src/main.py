@@ -82,8 +82,8 @@ class Process:
         self.individual_gate = Path(self.loadValueFromConfig('subdir', 'individual_gate',
                                                              'Individual Gate Quest Attachments'))
         self.work_path = self.loadPathFromConfig('work', 'path', default_value='/temp/project/results/')
-        self.copy_from_path1 = self.loadPathFromConfig('copyfrom', 'path1', default_value='/temp/project/temp1')
-        self.copy_from_path2 = self.loadPathFromConfig('copyfrom', 'path2', default_value='/temp/project/temp2')
+        self.copy_from_path1 = self.loadPathFromConfig('copyfrom', 'path1', default_value='/temp/project/temp1/')
+        self.copy_from_path2 = self.loadPathFromConfig('copyfrom', 'path2', default_value='/temp/project/temp2/')
 
     def setupLogging(self):
         """ Set up default logging object. """
@@ -134,7 +134,7 @@ class Process:
     def copytree(src: Path, dst: Path):
         try:
             logging.info(f'Copying: {src} -> {dst}')
-            shutil.copytree(src, dst)
+            shutil.copytree(src, dst, dirs_exist_ok=True)
         except OSError as os_error:
             # probably means directory didn't exist
             logging.warning(f'OSError raised: {os_error} while copying:')
@@ -151,9 +151,9 @@ class Process:
         # These are 2 common folders that will exist in every folder provided by First.csv" -- client
         if id_string not in self.csv_first_encountered_ids:
             self.csv_first_encountered_ids.add(id_string)
-            id_path = Path(self.work_path / id_string)
+            id_save_path = Path(self.work_path / id_string)
             for subdir in [self.project_homepage, self.individual_gate]:
-                to_create = id_path / subdir
+                to_create = id_save_path / subdir
                 logging.info(f'Creating path: {to_create}')
                 self.mkdir(to_create, parents=True)
             # "Now - you have already read the folder name 12354 -
@@ -162,7 +162,7 @@ class Process:
             # For example, after copy, it will look like c:\temp\project\12354\Project Homepage Attachments\12354"
             # -- client
             src: Path = self.copy_from_path1 / id_string
-            dst: Path = id_path / self.project_homepage / id_string
+            dst: Path = id_save_path / self.project_homepage / id_string
             self.copytree(src, dst)
         else:
             self.writeRowToErrorCSV([id_string], self.csv_errorfile_first_writer)
@@ -171,7 +171,7 @@ class Process:
         """ Handle row in nested input CSV. """
         id_string = row[0]
         if id_string in self.csv_first_encountered_ids and id_string not in self.csv_second_encountered_ids:
-            id_path = Path(self.work_path / id_string)
+            id_save_path = Path(self.work_path / id_string)
             # "Now, take the same folder name (12354 from First.csv) and search Second.csv.
             # For every find, you will find multiple different unique folder names listed in column 2 of Second.csv.
             # Read those different unique folder names from column2 corresponding to column1
@@ -185,12 +185,11 @@ class Process:
             if len(row) > 1:
                 for column in row[1:]:
                     src: Path = self.copy_from_path2 / column
-                    dst: Path = id_path / self.individual_gate / id_string
+                    dst: Path = id_save_path / self.individual_gate / column
                     self.copytree(src, dst)
             else:
                 logging.warning(
                     f'Entry in {self.csv_pathfile_second} with ID column {id_string} does not have subdir columns!')
-
 
     def main(self):
         """ Run program. """
