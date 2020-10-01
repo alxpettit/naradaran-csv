@@ -3,7 +3,7 @@
 import configparser
 import logging
 from pathlib import Path
-import csv
+import csv, sys
 from typing import List, Set
 
 
@@ -33,7 +33,7 @@ class Process:
     def exitError(error_string):
         """ Produce error and exit. """
         logging.error(error_string)
-        exit(1)
+        sys.exit(1)
 
     def loadValueFromConfig(self, key: str, value: str):
         """ Load values from our config file, terminating in event of error. """
