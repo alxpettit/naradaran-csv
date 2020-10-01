@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-rsync -Pax example/Before/ test/ --delete --backup-dir=/home/a/.rsync-backup/ --backup
+rsync -Pax test_template/ test/ --delete --backup-dir="$HOME/.rsync-backup/" --backup
