@@ -3,7 +3,6 @@
 import configparser
 import csv
 import logging
-import os
 import sys
 from os import getcwd
 from pathlib import Path
@@ -82,7 +81,9 @@ class Process:
 
     def openErrorCSVs(self):
         """ Open CSVs and create writer objects. """
+        self.mkdir(self.csv_errorfile_main.parent, parents=True)
         self.csv_errorfile_main_writer = csv.writer(open(self.csv_errorfile_main, 'w'))
+        self.mkdir(self.csv_errorfile_nested.parent, parents=True)
         self.csv_errorfile_nested_writer = csv.writer(open(self.csv_errorfile_nested, 'w'))
 
     @staticmethod
@@ -105,6 +106,11 @@ class Process:
             path.mkdir(parents=parents)
         except FileExistsError:
             logging.warning(f'Attempted to create {path}, but it already exists!')
+            return False
+        except FileNotFoundError:
+            logging.warning(f'Attempted to create {path}, but parent directory doesn\'t exist!')
+            return False
+        return True
 
     # noinspection DuplicatedCode
     def handleRowMain(self, row: list):
@@ -131,10 +137,16 @@ class Process:
             self.nested_encountered_names.add(dir_name)
             to_create = Path(self.target_path / dir_name / self.folder1 / nested_dir_name)
             logging.info(f'Creating path: {to_create}')
-            self.mkdir(to_create, parents=False)
+            status = self.mkdir(to_create, parents=False)
+            if not status:
+                self.writeRowToErrorCSV([dir_name], self.csv_errorfile_nested_writer)
+
             to_create = Path(self.target_path / dir_name / self.folder2 / nested_dir_name)
             logging.info(f'Creating path: {to_create}')
+            status = self.mkdir(to_create, parents=False)
             self.mkdir(to_create, parents=False)
+            if not status:
+                self.writeRowToErrorCSV([dir_name], self.csv_errorfile_nested_writer)
         else:
             self.writeRowToErrorCSV([dir_name], self.csv_errorfile_nested_writer)
 
