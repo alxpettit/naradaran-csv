@@ -23,6 +23,7 @@ class Process:
     csv_pathfile_second: Path = Path()
     # The path to which to write.
     work_path: Path = Path()
+
     # The paths from which to copy
     copy_from_path1: Path = Path()
     copy_from_path2: Path = Path()
@@ -80,7 +81,7 @@ class Process:
                                                               'Project Homepage Attachments'))
         self.individual_gate = Path(self.loadValueFromConfig('subdir', 'individual_gate',
                                                              'Individual Gate Quest Attachments'))
-        self.work_path = self.loadPathFromConfig('work', 'path', default_value='/temp/project')
+        self.work_path = self.loadPathFromConfig('work', 'path', default_value='/temp/project/results/')
         self.copy_from_path1 = self.loadPathFromConfig('copyfrom', 'path1', default_value='/temp/project/temp1')
         self.copy_from_path2 = self.loadPathFromConfig('copyfrom', 'path2', default_value='/temp/project/temp2')
 
@@ -139,7 +140,6 @@ class Process:
             logging.warning(f'OSError raised: {os_error} while copying:')
             logging.warning(f'{src} -> {dst}')
 
-    # noinspection DuplicatedCode
     def handleRowFirstCSV(self, row: list):
         """ Handle row in main input CSV. """
         id_string = row[0]
@@ -167,7 +167,6 @@ class Process:
         else:
             self.writeRowToErrorCSV([id_string], self.csv_errorfile_first_writer)
 
-    # noinspection DuplicatedCode
     def handleRowSecondCSV(self, row: list):
         """ Handle row in nested input CSV. """
         id_string = row[0]
