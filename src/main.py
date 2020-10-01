@@ -38,8 +38,10 @@ class Process:
     # We add errored directory names to these CSVs
     csv_errorfile_first: Path = Path()
     csv_errorfile_second: Path = Path()
+    csv_errorfile_third: Path = Path()
     csv_errorfile_first_writer: csv.writer = None
     csv_errorfile_second_writer: csv.writer = None
+    csv_errorfile_third_writer: csv.writer = None
     project_homepage: Path = Path()
     individual_gate: Path = Path()
     logging_level: int = None
@@ -112,16 +114,18 @@ class Process:
             ]
         )
 
+    def openErrorCSV(self, errorfile: Path):
+        if errorfile.exists():
+            remove(errorfile)
+        else:
+            self.mkdir(errorfile.parent, parents=True)
+        return csv.writer(open(errorfile, 'w'))
+
     def openErrorCSVs(self):
         """ Open CSVs and create writer objects. """
-        if self.csv_errorfile_first.exists():
-            remove(self.csv_errorfile_first)
-        self.mkdir(self.csv_errorfile_first.parent, parents=True)
-        self.csv_errorfile_first_writer = csv.writer(open(self.csv_errorfile_first, 'w'))
-        if self.csv_errorfile_second.exists():
-            remove(self.csv_errorfile_second)
-        self.mkdir(self.csv_errorfile_second.parent, parents=True)
-        self.csv_errorfile_second_writer = csv.writer(open(self.csv_errorfile_second, 'w'))
+        self.csv_errorfile_first_writer = self.openErrorCSV(self.csv_errorfile_first)
+        self.csv_errorfile_second_writer = self.openErrorCSV(self.csv_errorfile_second)
+        self.csv_errorfile_third_writer = self.openErrorCSV(self.csv_errorfile_third)
 
     def handleErroredID(self, writer_handle: csv.writer, doc_name, error_type):
         """ Write a column to CSV """
@@ -138,7 +142,7 @@ class Process:
                 row_callback(row)
 
     @staticmethod
-    def mkdir(path: Path, parents: bool):
+    def mkdir(path: Path, parents: bool) -> object:
         try:
             path.mkdir(parents=parents)
         except FileExistsError:
@@ -231,9 +235,9 @@ class Process:
     def handleThirdCSV(self):
         logging.info(f'Handling input CSV {self.csv_third}')
         """ Read pathfile for main paths. """
-        with open(self.csv_third, 'r') as read_obj:
+        with open(self.csv_third, 'r', encoding='latin1') as read_obj:
             csv_reader = csv.reader(read_obj)
-            header = next(csv_reader)
+            _ = next(csv_reader)  # header
             for row_num, row in enumerate(csv_reader):
                 try:
                     node_id = row[0]
@@ -243,8 +247,9 @@ class Process:
                     logging.warning(f'Warning! Missing entries in row {row_num} of ThirdCSV.')
                 test_path = Path(self.work_path / node_id / dir_name / file_name)
                 if not test_path.exists():
+                    self.current_id = dir_name
                     self.handleErroredID(writer_handle=self.csv_errorfile_third_writer,
-                                         doc_name='ThirdCSV', error_type='ENTRY_MISSING_FROM_FIRST_CSV')
+                                         doc_name=test_path, error_type='ERROR_MISSING_FILE')
 
     def main(self):
         """ Run program. """
