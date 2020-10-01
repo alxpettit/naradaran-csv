@@ -97,9 +97,9 @@ class Process:
                 row_callback(row)
 
     @staticmethod
-    def mkdir(path: Path):
+    def mkdir(path: Path, parents: bool):
         try:
-            path.mkdir(parents=True)
+            path.mkdir(parents=parents)
         except FileExistsError:
             logging.warning(f'Attempted to create {path}, but it already exists!')
 
@@ -111,7 +111,7 @@ class Process:
             self.main_encountered_names.add(dir_name)
             to_create = Path(self.target_path / dir_name)
             logging.info(f'Creating path: {to_create}')
-            self.mkdir(to_create)
+            self.mkdir(to_create, parents=True)
         else:
             self.writeRowToErrorCSV([dir_name], self.csv_errorfile_main_writer)
 
@@ -128,10 +128,10 @@ class Process:
             self.nested_encountered_names.add(dir_name)
             to_create = Path(self.target_path / dir_name / self.folder1 / nested_dir_name)
             logging.info(f'Creating path: {to_create}')
-            self.mkdir(to_create)
+            self.mkdir(to_create, parents=False)
             to_create = Path(self.target_path / dir_name / self.folder2 / nested_dir_name)
             logging.info(f'Creating path: {to_create}')
-            self.mkdir(to_create)
+            self.mkdir(to_create, parents=False)
         else:
             self.writeRowToErrorCSV([dir_name], self.csv_errorfile_nested_writer)
 
