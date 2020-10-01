@@ -1,5 +1,5 @@
 build:
-	pyinstaller --onefile src/main.py
+	pyinstaller --onefile src/main.py --noupx
 
 genTestDir:
 	./gen-test-dir.sh
