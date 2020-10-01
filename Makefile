@@ -3,3 +3,6 @@ build:
 
 genTestDir:
 	./gen-test-dir.sh
+
+clean:
+	rm -rfv dist/ build/ test/ *.spec
