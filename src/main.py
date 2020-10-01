@@ -126,7 +126,10 @@ class Process:
             return False
         if dir_name not in self.nested_encountered_names:
             self.nested_encountered_names.add(dir_name)
-            to_create = Path(self.target_path / dir_name / nested_dir_name)
+            to_create = Path(self.target_path / dir_name / self.folder1 / nested_dir_name)
+            logging.info(f'Creating path: {to_create}')
+            self.mkdir(to_create)
+            to_create = Path(self.target_path / dir_name / self.folder2 / nested_dir_name)
             logging.info(f'Creating path: {to_create}')
             self.mkdir(to_create)
         else:
