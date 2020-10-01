@@ -1,0 +1,8 @@
+/example2
+/dist
+/test
+/build
+/.idea
+*.log
+*.spec
+*.pyc
