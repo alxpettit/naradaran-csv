@@ -6,3 +6,7 @@ genTestDir:
 
 clean:
 	rm -rfv dist/ build/ test/ *.spec
+
+windowsPublish:
+	rm Y:/main -v
+	cp dist/main.exe Y:/main -v
