@@ -26,6 +26,8 @@ class Process:
     csv_errorfile_nested: Path = Path()
     csv_errorfile_main_writer: csv.writer = None
     csv_errorfile_nested_writer: csv.writer = None
+    folder1: Path = Path()
+    folder2: Path = Path()
     # config parser
     config = configparser.ConfigParser()
 
@@ -59,6 +61,8 @@ class Process:
         self.csv_pathfile_nested = self.loadPathFromConfig('csv_pathsfiles', 'path_nested')
         self.csv_errorfile_main = self.loadPathFromConfig('csv_errorfiles', 'path_main', nonexistent=True)
         self.csv_errorfile_nested = self.loadPathFromConfig('csv_errorfiles', 'path_nested', nonexistent=True)
+        self.folder1 = Path(self.loadValueFromConfig('subdir', 'folder1'))
+        self.folder2 = Path(self.loadValueFromConfig('subdir', 'folder2'))
         self.target_path = self.loadPathFromConfig('target', 'path')
 
     def setupLogging(self):
@@ -115,9 +119,14 @@ class Process:
     def handleRowNested(self, row: list):
         """ Handle row in nested input CSV. """
         dir_name = row[0]
+        try:
+            nested_dir_name = row[1]
+        except IndexError:
+            self.writeRowToErrorCSV([dir_name], self.csv_errorfile_nested_writer)
+            return False
         if dir_name not in self.nested_encountered_names:
             self.nested_encountered_names.add(dir_name)
-            to_create = Path(self.target_path / dir_name)
+            to_create = Path(self.target_path / dir_name / nested_dir_name)
             logging.info(f'Creating path: {to_create}')
             self.mkdir(to_create)
         else:
