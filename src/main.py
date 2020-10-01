@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 import configparser
+import csv
 import logging
+import os
+import sys
+from os import getcwd
 from pathlib import Path
-import csv, sys
 from typing import List, Set
 
 
@@ -34,7 +37,7 @@ class Process:
     @staticmethod
     def exitError(error_string):
         """ Produce error and exit. """
-        logging.error(error_string)
+        logging.error(error_string, exc_info=True)
         sys.exit(1)
 
     def loadValueFromConfig(self, key: str, value: str):
@@ -49,7 +52,7 @@ class Process:
         if abs_path.exists() or nonexistent:
             return abs_path
         else:
-            self.exitError(f'File specified under key {key}, value {value} does not exist!')
+            self.exitError(f'File specified under key {key}, value {value} ({abs_path}) does not exist!')
 
     def loadConfig(self):
         """ Load our config file, terminating in event of error. """
@@ -135,9 +138,10 @@ class Process:
         else:
             self.writeRowToErrorCSV([dir_name], self.csv_errorfile_nested_writer)
 
-    def run(self):
+    def main(self):
         """ Run program. """
         self.setupLogging()
+        logging.info(f'Program started. Working directory: {getcwd()}')
         logging.info('Loading config...')
         self.loadConfig()
         logging.info('Opening error CSVs...')
@@ -150,4 +154,9 @@ class Process:
 
 if __name__ == '__main__':
     process = Process()
-    process.run()
+    # noinspection PyBroadException
+    try:
+        process.main()
+    except Exception as e:
+        logging.error('Fatal error in main()', exc_info=True)
+        exit(1)
