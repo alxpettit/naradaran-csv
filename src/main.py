@@ -78,47 +78,50 @@ class Process:
         self.csv_errorfile_main_writer = csv.writer(open(self.csv_errorfile_main, 'w'))
         self.csv_errorfile_nested_writer = csv.writer(open(self.csv_errorfile_nested, 'w'))
 
-    def writeRowToErrorCSV(self, row: List[str], writer_handle: csv.writer):
+    @staticmethod
+    def writeRowToErrorCSV(row: List[str], writer_handle: csv.writer):
         """ Write a column to CSV """
         writer_handle.writerow(row)
 
-    # No time for polishing!
-    # noinspection DuplicatedCode
-    def readMain(self):
+    @staticmethod
+    def handleInputCSV(input_csv, row_callback):
+        logging.info(f'Handling input CSV {input_csv}')
         """ Read pathfile for main paths. """
-        with open(self.csv_pathfile_main, 'r') as read_obj:
+        with open(input_csv, 'r') as read_obj:
             csv_reader = csv.reader(read_obj)
             for row in csv_reader:
-                dir_name = row[0]
-                if dir_name not in self.main_encountered_names:
-                    self.main_encountered_names.add(dir_name)
-                    to_create = Path(self.target_path / dir_name)
-                    logging.info(f'Creating path: {to_create}')
-                    try:
-                        to_create.mkdir(parents=True)
-                    except FileExistsError:
-                        logging.warning(f'Attempted to create {to_create}, but it already exists!')
-                else:
-                    self.writeRowToErrorCSV([dir_name], self.csv_errorfile_main_writer)
+                row_callback(row)
 
-    # No time for polishing!
+    @staticmethod
+    def mkdir(path: Path):
+        try:
+            path.mkdir(parents=True)
+        except FileExistsError:
+            logging.warning(f'Attempted to create {path}, but it already exists!')
+
     # noinspection DuplicatedCode
-    def readNested(self):
-        """ Read pathfile for nested paths. """
-        with open(self.csv_pathfile_nested, 'r') as read_obj:
-            csv_reader = csv.reader(read_obj)
-            for row in csv_reader:
-                dir_name = row[0]
-                if dir_name not in self.nested_encountered_names:
-                    self.nested_encountered_names.add(dir_name)
-                    to_create = Path(self.target_path / dir_name)
-                    logging.info(f'Creating path: {to_create}')
-                    try:
-                        to_create.mkdir(parents=True)
-                    except FileExistsError:
-                        logging.warning(f'Attempted to create {to_create}, but it already exists!')
-                else:
-                    self.writeRowToErrorCSV([dir_name], self.csv_errorfile_nested_writer)
+    def handleRowMain(self, row: list):
+        """ Handle row in main input CSV. """
+        dir_name = row[0]
+        if dir_name not in self.main_encountered_names:
+            self.main_encountered_names.add(dir_name)
+            to_create = Path(self.target_path / dir_name)
+            logging.info(f'Creating path: {to_create}')
+            self.mkdir(to_create)
+        else:
+            self.writeRowToErrorCSV([dir_name], self.csv_errorfile_main_writer)
+
+    # noinspection DuplicatedCode
+    def handleRowNested(self, row: list):
+        """ Handle row in nested input CSV. """
+        dir_name = row[0]
+        if dir_name not in self.nested_encountered_names:
+            self.nested_encountered_names.add(dir_name)
+            to_create = Path(self.target_path / dir_name)
+            logging.info(f'Creating path: {to_create}')
+            self.mkdir(to_create)
+        else:
+            self.writeRowToErrorCSV([dir_name], self.csv_errorfile_nested_writer)
 
     def run(self):
         """ Run program. """
@@ -127,8 +130,10 @@ class Process:
         self.loadConfig()
         logging.info('Opening error CSVs...')
         self.openErrorCSVs()
-        logging.info('Reading M')
-        self.readMain()
+        logging.info('Reading main CSV...')
+        self.handleInputCSV(self.csv_pathfile_main, self.handleRowMain)
+        logging.info('Reading nested CSV...')
+        self.handleInputCSV(self.csv_pathfile_nested, self.handleRowNested)
 
 
 if __name__ == '__main__':
