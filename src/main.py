@@ -18,9 +18,12 @@ class Process:
     log_file_name: Path = Path('debug.log')
     csv_first_encountered_ids: Set[str] = set()
     csv_second_encountered_ids: Set[str] = set()
+
     # IDK paths
     csv_pathfile_first: Path = Path()
     csv_pathfile_second: Path = Path()
+    csv_third: Path = Path()
+
     # The path to which to write.
     work_path: Path = Path()
 
@@ -79,12 +82,15 @@ class Process:
         # Names are very confusing, but that's how it is sometimes with commissions! :)
         # Originally these configs were entirely controlled by config file, but then client asked to hardcode defaults
         # Should probably refactor to saner system but since it's a one-time use thing...
-        self.csv_pathfile_first = self.loadPathFromConfig('csv_pathsfiles', 'path_main', default_value='First.csv')
-        self.csv_errorfile_first = self.loadPathFromConfig('csv_errorfiles', 'path_main', nonexistent=True,
+        self.csv_pathfile_first = self.loadPathFromConfig('csv_pathsfiles', 'path_first', default_value='First.csv')
+        self.csv_errorfile_first = self.loadPathFromConfig('csv_errorfiles', 'path_first', nonexistent=True,
                                                            default_value='First_error.csv')
-        self.csv_pathfile_second = self.loadPathFromConfig('csv_pathsfiles', 'path_nested', default_value='Second.csv')
-        self.csv_errorfile_second = self.loadPathFromConfig('csv_errorfiles', 'path_nested', nonexistent=True,
+        self.csv_pathfile_second = self.loadPathFromConfig('csv_pathsfiles', 'path_second', default_value='Second.csv')
+        self.csv_errorfile_second = self.loadPathFromConfig('csv_errorfiles', 'path_second', nonexistent=True,
                                                             default_value='Second_error.csv')
+        self.csv_errorfile_third = self.loadPathFromConfig('csv_errorfiles', 'path_third', nonexistent=True,
+                                                           default_value='Third_error.csv')
+        self.csv_third = self.loadPathFromConfig('csv_pathsfiles', 'path_third', default_value='Third.csv')
         self.project_homepage = Path(self.loadValueFromConfig('subdir', 'project_homepage',
                                                               'Project Homepage Attachments'))
         self.individual_gate = Path(self.loadValueFromConfig('subdir', 'individual_gate',
@@ -123,7 +129,7 @@ class Process:
         logging.warning(f'Encountered error in "{doc_name}" of type "{error_type}". ID is {self.current_id}')
 
     @staticmethod
-    def handleInputCSV(input_csv, row_callback):
+    def handleInputCSV(input_csv: csv.reader, row_callback):
         logging.info(f'Handling input CSV {input_csv}')
         """ Read pathfile for main paths. """
         with open(input_csv, 'r') as read_obj:
@@ -222,6 +228,24 @@ class Process:
                 self.handleErroredID(writer_handle=self.csv_errorfile_second_writer,
                                      doc_name='SecondCSV', error_type='ENTRY_MISSING_FROM_FIRST_CSV')
 
+    def handleThirdCSV(self):
+        logging.info(f'Handling input CSV {self.csv_third}')
+        """ Read pathfile for main paths. """
+        with open(self.csv_third, 'r') as read_obj:
+            csv_reader = csv.reader(read_obj)
+            header = next(csv_reader)
+            for row_num, row in enumerate(csv_reader):
+                try:
+                    node_id = row[0]
+                    dir_name = row[1]
+                    file_name = row[2]
+                except IndexError:
+                    logging.warning(f'Warning! Missing entries in row {row_num} of ThirdCSV.')
+                test_path = Path(self.work_path / node_id / dir_name / file_name)
+                if not test_path.exists():
+                    self.handleErroredID(writer_handle=self.csv_errorfile_third_writer,
+                                         doc_name='ThirdCSV', error_type='ENTRY_MISSING_FROM_FIRST_CSV')
+
     def main(self):
         """ Run program. """
         self.setupLogging()
@@ -230,10 +254,12 @@ class Process:
         self.loadConfig()
         logging.info('Opening error CSVs...')
         self.openErrorCSVs()
-        logging.info('Reading main CSV...')
+        logging.info('Reading first CSV...')
         self.handleInputCSV(self.csv_pathfile_first, self.handleRowFirstCSV)
-        logging.info('Reading nested CSV...')
+        logging.info('Reading second CSV...')
         self.handleInputCSV(self.csv_pathfile_second, self.handleRowSecondCSV)
+        logging.info('Reading third CSV...')
+        self.handleThirdCSV()
 
 
 if __name__ == '__main__':
