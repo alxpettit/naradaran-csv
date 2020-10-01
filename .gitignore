@@ -6,3 +6,4 @@
 *.log
 *.spec
 *.pyc
+src/__pycache__
