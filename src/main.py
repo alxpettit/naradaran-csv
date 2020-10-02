@@ -44,7 +44,7 @@ class Process:
     csv_errorfile_third_writer: csv.writer = None
     project_homepage: Path = Path()
     individual_gate: Path = Path()
-    logging_level: int = None
+    logging_level: int = logging.WARNING
     # config parser
     config = configparser.ConfigParser()
 
@@ -100,7 +100,8 @@ class Process:
         self.work_path = self.loadPathFromConfig('work', 'path', default_value='/temp/project/results/')
         self.copy_from_path1 = self.loadPathFromConfig('copyfrom', 'path1', default_value='/temp/project/temp1/')
         self.copy_from_path2 = self.loadPathFromConfig('copyfrom', 'path2', default_value='/temp/project/temp2/')
-        self.logging_level = int(self.loadValueFromConfig('logging', 'log_level', default_value=str(logging.WARNING)))
+        self.logging_level = int(self.loadValueFromConfig('logging', 'log_level', default_value=str(logging.ERROR)))
+        logging.getLogger().setLevel(self.logging_level)
 
     def setupLogging(self):
         """ Set up default logging object. """
@@ -130,7 +131,7 @@ class Process:
     def handleErroredID(self, writer_handle: csv.writer, doc_name, error_type):
         """ Write a column to CSV """
         writer_handle.writerow([self.current_id, error_type, doc_name])
-        logging.warning(f'Encountered error in "{doc_name}" of type "{error_type}". ID is {self.current_id}')
+        logging.error(f'Encountered error in "{doc_name}" of type "{error_type}". ID is {self.current_id}')
 
     @staticmethod
     def handleInputCSV(input_csv: csv.reader, row_callback):
