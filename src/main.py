@@ -233,7 +233,7 @@ class Process:
                 self.handleErroredID(writer_handle=self.csv_errorfile_second_writer,
                                      doc_name='SecondCSV', error_type='ENTRY_MISSING_FROM_FIRST_CSV')
 
-    def handleThirdCSV(self):
+    def handleThirdCSVOld(self):
         logging.info(f'Handling input CSV {self.csv_third}')
         """ Read pathfile for main paths. """
         with open(self.csv_third, 'r', encoding='latin1') as read_obj:
@@ -245,12 +245,37 @@ class Process:
                     dir_name = row[1]
                     file_name = row[2]
                 except IndexError:
-                    logging.warning(f'Warning! Missing entries in row {row_num} of ThirdCSV.')
+                    logging.warning(f'Warning! Missing entries in row {row_num} of ThirdCSV. Ignoring row.')
+                    continue
                 test_path = Path(self.work_path / node_id / dir_name / file_name)
                 if not test_path.exists():
                     self.current_id = dir_name
                     self.handleErroredID(writer_handle=self.csv_errorfile_third_writer,
                                          doc_name=test_path, error_type='ERROR_MISSING_FILE')
+
+    def handleThirdCSV(self):
+        logging.info(f'Handling input CSV {self.csv_third}')
+        """ Read pathfile for main paths. """
+        with open('missingfolders.txt', 'w') as missingfolders:
+            with open('missingfiles.txt', 'w') as missingfiles:
+                with open(self.csv_third, 'r', encoding='latin1') as read_obj:
+                    csv_reader = csv.reader(read_obj)
+                    _ = next(csv_reader)  # header
+                    for row_num, row in enumerate(csv_reader):
+                        try:
+                            # NODE_ID is useless per customer spec.
+                            # node_id = row[0]
+                            dir_name = row[1]
+                            file_name = row[2]
+                        except IndexError:
+                            logging.warning(f'Warning! Missing entries in row {row_num} of ThirdCSV. Ignoring row.')
+                            continue
+                        dir_path = Path(self.work_path / dir_name)
+                        if not dir_path.exists():
+                            missingfolders.write(f'{dir_name}\n')
+                        file_path = Path(dir_path / file_name)
+                        if not file_path.exists():
+                            missingfiles.write(f'"{file_name}" missing in "{dir_path}"\n')
 
     def main(self):
         """ Run program. """
@@ -258,12 +283,12 @@ class Process:
         logging.info(f'Program started. Working directory: {getcwd()}')
         logging.info('Loading config...')
         self.loadConfig()
-        logging.info('Opening error CSVs...')
-        self.openErrorCSVs()
-        logging.info('Reading first CSV...')
-        self.handleInputCSV(self.csv_pathfile_first, self.handleRowFirstCSV)
-        logging.info('Reading second CSV...')
-        self.handleInputCSV(self.csv_pathfile_second, self.handleRowSecondCSV)
+        # logging.info('Opening error CSVs...')
+        # self.openErrorCSVs()
+        # logging.info('Reading first CSV...')
+        # self.handleInputCSV(self.csv_pathfile_first, self.handleRowFirstCSV)
+        # logging.info('Reading second CSV...')
+        # self.handleInputCSV(self.csv_pathfile_second, self.handleRowSecondCSV)
         logging.info('Reading third CSV...')
         self.handleThirdCSV()
 
